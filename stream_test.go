@@ -162,16 +162,3 @@ func TestUnexpectedIOBehaviour(t *testing.T) {
 		}
 	})
 }
-
-func TestXLogPosConversion(t *testing.T) {
-  conversions := make(map[string]LogPos)
-  conversions["0/243C4C60"] = LogPos(607931488)
-  conversions["A1/243C4C60"] = LogPos(692097666144)
-  
-  for k, v := range conversions {
-    rk := v.ToString()
-    if rk != k {
-      t.Fatalf("expected LogPos(%d).ToString() to equal %s; got %v", v, k, rk)
-    }
-  }
-}

@@ -16,8 +16,6 @@ var (
 	ErrUnableToReadWholeMessage = errors.New("Unable to read whole message")
 )
 
-type LogPos uint64
-
 type Stream struct {
 	cmd     *exec.Cmd
 	running bool
@@ -186,10 +184,4 @@ func (s *Stream) stopWith(err error) {
 		default:
 		}
 	}
-}
-
-func (v LogPos) ToString() string {
-	high := uint32(v >> 32)
-	low := uint32(v)
-	return fmt.Sprintf("%X/%X", high, low)
 }
