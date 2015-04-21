@@ -171,11 +171,12 @@ func (m *DatumMessage) GetDatumPoint() *Point {
 }
 
 type RowMessage struct {
-	CommitTime       *int64          `protobuf:"zigzag64,1,opt,name=commit_time" json:"commit_time,omitempty"`
-	Table            *string         `protobuf:"bytes,2,opt,name=table" json:"table,omitempty"`
-	Op               *Op             `protobuf:"varint,3,opt,name=op,enum=llsr.Op" json:"op,omitempty"`
-	NewTuple         []*DatumMessage `protobuf:"bytes,4,rep,name=new_tuple" json:"new_tuple,omitempty"`
-	OldTuple         []*DatumMessage `protobuf:"bytes,5,rep,name=old_tuple" json:"old_tuple,omitempty"`
+	CommitTime       *uint64         `protobuf:"varint,1,opt,name=commit_time" json:"commit_time,omitempty"`
+	LogPosition      *uint64         `protobuf:"varint,2,opt,name=log_position" json:"log_position,omitempty"`
+	Table            *string         `protobuf:"bytes,3,opt,name=table" json:"table,omitempty"`
+	Op               *Op             `protobuf:"varint,4,opt,name=op,enum=llsr.Op" json:"op,omitempty"`
+	NewTuple         []*DatumMessage `protobuf:"bytes,5,rep,name=new_tuple" json:"new_tuple,omitempty"`
+	OldTuple         []*DatumMessage `protobuf:"bytes,6,rep,name=old_tuple" json:"old_tuple,omitempty"`
 	XXX_unrecognized []byte          `json:"-"`
 }
 
@@ -183,9 +184,16 @@ func (m *RowMessage) Reset()         { *m = RowMessage{} }
 func (m *RowMessage) String() string { return proto.CompactTextString(m) }
 func (*RowMessage) ProtoMessage()    {}
 
-func (m *RowMessage) GetCommitTime() int64 {
+func (m *RowMessage) GetCommitTime() uint64 {
 	if m != nil && m.CommitTime != nil {
 		return *m.CommitTime
+	}
+	return 0
+}
+
+func (m *RowMessage) GetLogPosition() uint64 {
+	if m != nil && m.LogPosition != nil {
+		return *m.LogPosition
 	}
 	return 0
 }
