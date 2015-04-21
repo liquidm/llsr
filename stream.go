@@ -46,6 +46,9 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 	if len(dbConfig.Password) > 0 {
 		cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSWORD=%s", dbConfig.Password))
 	}
+	if startPos > 0 {
+		cmd.Args = append(cmd.Args, "-I", startPos.ToString())
+	}
 	stream := &Stream{
 		cmd:      cmd,
 		finished: make(chan error),
