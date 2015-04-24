@@ -5,6 +5,7 @@ import (
   "strings"
 )
 
+// Configuration for PostgreSQL connection.
 type DatabaseConfig struct {
 	Database string
 	User     string
@@ -13,6 +14,7 @@ type DatabaseConfig struct {
 	Port     int
 }
 
+// Creates new DatabaseConfiguration with given database name and User set to "postgres"
 func NewDatabaseConfig(database string) *DatabaseConfig {
 	return &DatabaseConfig{
 		Database: database,
@@ -20,6 +22,7 @@ func NewDatabaseConfig(database string) *DatabaseConfig {
 	}
 }
 
+// Returns connection string that can be used in sql.Open
 func (c *DatabaseConfig) ToConnectionString() string {
   options := make([]string, 0)
   if len(c.Database) > 0 {

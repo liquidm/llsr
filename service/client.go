@@ -4,7 +4,9 @@ import (
   "github.com/liquidm/llsr"
 )
 
+//Converter is used to conver raw llsr.RowMessage structs into app specific data.
 type Converter interface {
+  //Converts llsr.RowMessage into app specific data.
   Convert(*llsr.RowMessage, EnumsMap) interface{}
 }
 
@@ -26,6 +28,7 @@ type Client struct {
   enums EnumsMap
 }
 
+//Creates new Client struct
 func NewClient(dbConfig *llsr.DatabaseConfig, converter Converter, slot string, startPosition llsr.LogPos) (*Client, error) {
   enums, err := loadEnums(dbConfig)
   if err != nil {
@@ -46,14 +49,17 @@ func NewClient(dbConfig *llsr.DatabaseConfig, converter Converter, slot string, 
   return client, nil
 }
 
+//Updates produces objects converted by Converter interface.
 func (c *Client) Updates() <-chan interface{} {
   return c.updates
 }
 
+//Events produces control events about underlying Stream object.
 func (c *Client) Events() <-chan *Event {
   return c.events
 }
 
+//Starts client. It does not block.
 func (c *Client) Start() error {
   if c.stream != nil {
     return llsr.ErrStreamAlreadyRunning
@@ -73,6 +79,7 @@ func (c *Client) Start() error {
   return nil
 }
 
+//Stops client. It blocks untill pg_recvlogical closes.
 func (c *Client) Stop() {
   c.stopped = true
   close(c.closeChan)

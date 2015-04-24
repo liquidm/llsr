@@ -6,6 +6,8 @@ import (
   _ "github.com/lib/pq"
 )
 
+//EnumsMap is used in Converter interface.
+//It has true set to every oid which is enum type in database.
 type EnumsMap map[int]bool
 
 func loadEnums(dbConfig *llsr.DatabaseConfig) (EnumsMap, error) {

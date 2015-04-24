@@ -16,6 +16,8 @@ var (
 	ErrUnableToReadWholeMessage = errors.New("Unable to read whole message")
 )
 
+//Stream represents pg_recvlogical process.
+//It is low level object and you should generally use service.Client.
 type Stream struct {
 	cmd     *exec.Cmd
 	running bool
@@ -32,6 +34,7 @@ type Stream struct {
 	runtimeError error
 }
 
+//Creates new Stream object
 func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 	cmd := exec.Command("pg_recvlogical", "--start", "--file=-", "-S", slot, "-d", dbConfig.Database, "-F", "0")
 	if len(dbConfig.User) > 0 {
@@ -60,6 +63,7 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 	return stream
 }
 
+//Establishes connection with PostgreSQL LLSR
 func (s *Stream) Start() error {
 	var err error
 
@@ -94,18 +98,23 @@ func (s *Stream) Start() error {
 	return nil
 }
 
+//Closes connection with LLSR. It does not block. You should wait on Finished channel to ensure stream is closed.
 func (s *Stream) Stop() error {
 	return s.cmd.Process.Signal(os.Interrupt)
 }
 
+//Finished channel produces error message when underlying pg_recvlogical exits with error.
+//It produces nil when pg_recvlogical exits with 0 (e.g when Stop() was called)
 func (s *Stream) Finished() <-chan error {
 	return s.finished
 }
 
+//Data channel produces RowMessage objects.
 func (s *Stream) Data() <-chan *RowMessage {
 	return s.msgChan
 }
 
+//ErrOut channel produces STDERR messages of underlying pg_recvlogical process.
 func (s *Stream) ErrOut() <-chan interface{} {
 	return s.errFifo.Output()
 }

@@ -1,5 +1,6 @@
 package llsr
 
+//Concurent FIFO data structure
 type Fifo struct {
 	write     chan interface{}
 	read      chan interface{}
@@ -15,6 +16,7 @@ type element struct {
 	previous *element
 }
 
+//Creates new Fifo
 func NewFifo() *Fifo {
 	fifo := &Fifo{
 		write:     make(chan interface{}),
@@ -24,19 +26,19 @@ func NewFifo() *Fifo {
 	return fifo
 }
 
+//Appends new element to Fifo.
+//It blocks if fifo is closed.
 func (f *Fifo) Input() chan<- interface{} {
 	return f.write
 }
 
+//Gets next element from Fifo.
+//It blocks if fifo is closed or fifo is empty.
 func (f *Fifo) Output() <-chan interface{} {
 	return f.read
 }
 
-func (f *Fifo) Close() {
-	f.closeChan <- true
-	<-f.closeChan
-}
-
+//Makes Input and Output channels operable.
 func (f *Fifo) Open() {
 	if f.opened {
 		return
@@ -67,6 +69,12 @@ func (f *Fifo) Open() {
 		f.opened = false
 		f.closeChan <- true
 	}()
+}
+
+//Closes Fifo making Input and Output channels blocking.
+func (f *Fifo) Close() {
+	f.closeChan <- true
+	<-f.closeChan
 }
 
 func (f *Fifo) add(v interface{}) {
