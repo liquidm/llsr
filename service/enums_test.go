@@ -50,3 +50,40 @@ func TestEnumDiscovery(t *testing.T) {
     }
   })
 }
+
+func TestExtractValue(t *testing.T) {
+  withEnumOid(t, func(t *testing.T, oid int){
+    dbConfig := llsr.NewDatabaseConfig(dbName())
+    dbConfig.User = dbUser()
+
+    enums, err := loadEnums(dbConfig)
+    if err != nil {
+      t.Fatal(err)
+    }
+
+    oid64 := int64(oid)
+
+    datumMessage := &llsr.DatumMessage{
+      ColumnType: &oid64,
+      DatumBytes: []byte("enum_label"),
+    }
+
+    extractedValue, err := enums.ExtractValue(datumMessage)
+    if err != nil {
+      t.Fatalf("Expected ExtractValue not to return error. Got: %v", err)
+    }
+
+    if *(extractedValue.(*string)) != "enum_label" {
+      t.Fatalf("Expected ExtractValue to return enum label. Got: %v", extractedValue)
+    }
+
+    oid64 += 1
+
+    datumMessage.ColumnType = &oid64
+
+    extractedValue, err = enums.ExtractValue(datumMessage)
+    if err != ErrUnknownOID {
+      t.Fatalf("Expected ExtractValue to return ErrUnknownOID error. Got: %v", err)
+    }
+  })
+}
