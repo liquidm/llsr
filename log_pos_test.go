@@ -1,23 +1,23 @@
 package llsr
 
 import (
-  "testing"
+	"testing"
 )
 
 func TestXLogPosConversion(t *testing.T) {
-  conversions := make(map[string]LogPos)
-  conversions["0/243C4C60"] = LogPos(607931488)
-  conversions["A1/243C4C60"] = LogPos(692097666144)
-  
-  for k, v := range conversions {
-    rk := v.ToString()
-    if rk != k {
-      t.Fatalf("expected LogPos(%d).ToString() to equal %s; got %v", v, k, rk)
-    }
+	conversions := make(map[string]LogPos)
+	conversions["0/243C4C60"] = LogPos(607931488)
+	conversions["A1/243C4C60"] = LogPos(692097666144)
 
-    kr := StrToLogPos(k)
-    if kr != v {
-      t.Fatalf("expected StrToLogPos(\"%s\") to equal %d; got %v", k, v, kr)
-    }
-  }
+	for k, v := range conversions {
+		rk := v.ToString()
+		if rk != k {
+			t.Fatalf("expected LogPos(%d).ToString() to equal %s; got %v", v, k, rk)
+		}
+
+		kr := StrToLogPos(k)
+		if kr != v {
+			t.Fatalf("expected StrToLogPos(\"%s\") to equal %d; got %v", k, v, kr)
+		}
+	}
 }

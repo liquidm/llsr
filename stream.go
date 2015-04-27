@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"io"
 	"os"
 	"os/exec"
-	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -55,9 +55,9 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 	stream := &Stream{
 		cmd:      cmd,
 		finished: make(chan error),
-		errFifo: NewFifo(),
+		errFifo:  NewFifo(),
 		dataFifo: NewFifo(),
-		msgChan: make(chan *RowMessage),
+		msgChan:  make(chan *RowMessage),
 	}
 	go stream.convertData()
 	return stream
@@ -172,7 +172,7 @@ func (s *Stream) convertData() {
 			return
 		}
 
-		s.msgChan<- decodedData
+		s.msgChan <- decodedData
 	}
 }
 
