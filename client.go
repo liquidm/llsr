@@ -1,3 +1,6 @@
+/*
+Package llsr is a pg_recvlogical wraper for Postgres' Logical Log Streaming Replication.
+*/
 package llsr
 
 import (
@@ -10,9 +13,13 @@ type Converter interface {
 	Convert(*decoderbufs.RowMessage, EnumsMap) interface{}
 }
 
+//Client is a generic postgres llsr client. It handles Updates and Events received from Postgres binlog. You must call Close() to make sure everything is cleaned up properly.
 type Client interface {
+	//Updates are database events such as adding, updating or deleting records. Updates return type is defined by Converter.
 	Updates() <-chan interface{}
+	//Events are internal messages received during communication with LLSR.
 	Events() <-chan *Event
+	//Close makes sure every resources are released succesfully
 	Close()
 }
 
