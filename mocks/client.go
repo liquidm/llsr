@@ -58,7 +58,7 @@ func (c *Client) ExpectBackendInvalidExitStatusEvent() {
 func (c *Client) Close() {
 	close(c.expectations)
 	<-c.closeChan
-	if len(c.updates) > 0 {
+	if len(c.updates) > 0 || len(c.events) > 0 {
 		c.t.Errorf("Not all messages were consumed")
 	}
 }
