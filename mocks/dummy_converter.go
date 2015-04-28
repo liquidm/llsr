@@ -9,7 +9,7 @@ import (
 
 type DummyConverter struct{}
 
-func (*DummyConverter) Convert(change *decoderbufs.RowMessage, enums llsr.EnumsMap) interface{} {
+func (*DummyConverter) Convert(change *decoderbufs.RowMessage, enums llsr.ValuesMap) interface{} {
 	var buf bytes.Buffer
 
 	switch change.GetOp() {

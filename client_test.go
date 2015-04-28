@@ -14,7 +14,7 @@ type testClientCallback func(*testing.T, Client, *sql.DB)
 
 type DummyConverter struct{}
 
-func (*DummyConverter) Convert(change *decoderbufs.RowMessage, enums EnumsMap) interface{} {
+func (*DummyConverter) Convert(change *decoderbufs.RowMessage, valuesMap ValuesMap) interface{} {
 	var buf bytes.Buffer
 
 	switch change.GetOp() {

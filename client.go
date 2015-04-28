@@ -10,7 +10,7 @@ import (
 //Converter is used to conver raw RowMessage structs into app specific data.
 type Converter interface {
 	//Converts RowMessage into app specific data.
-	Convert(*decoderbufs.RowMessage, EnumsMap) interface{}
+	Convert(*decoderbufs.RowMessage, ValuesMap) interface{}
 }
 
 //Client is a generic postgres llsr client. It handles Updates and Events received from Postgres binlog. You must call Close() to make sure everything is cleaned up properly.
@@ -38,12 +38,12 @@ type client struct {
 	closeChan  chan struct{}
 	closedChan chan bool
 
-	enums EnumsMap
+	valuesMap ValuesMap
 }
 
 //Creates new Client struct
 func NewClient(dbConfig *DatabaseConfig, converter Converter, slot string, startPosition LogPos) (Client, error) {
-	enums, err := loadEnums(dbConfig)
+	valuesMap, err := loadValuesMap(dbConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func NewClient(dbConfig *DatabaseConfig, converter Converter, slot string, start
 		events:        make(chan *Event),
 		closeChan:     make(chan struct{}),
 		closedChan:    make(chan bool),
-		enums:         enums,
+		valuesMap:     valuesMap,
 	}
 
 	return client, client.start()
@@ -104,7 +104,7 @@ func (c *client) recvData() {
 	for {
 		select {
 		case data := <-c.stream.Data():
-			c.updates <- c.converter.Convert(data, c.enums)
+			c.updates <- c.converter.Convert(data, c.valuesMap)
 			c.startPosition = LogPos(data.GetLogPosition())
 		case <-c.closeChan:
 			return
