@@ -1,16 +1,14 @@
-package service
+package llsr
 
 import (
 	"database/sql"
-	_ "github.com/lib/pq"
-	"github.com/liquidm/llsr"
 )
 
 //EnumsMap is used in Converter interface.
 //It has true set to every oid which is enum type in database.
 type EnumsMap map[int]bool
 
-func loadEnums(dbConfig *llsr.DatabaseConfig) (EnumsMap, error) {
+func loadEnums(dbConfig *DatabaseConfig) (EnumsMap, error) {
 	enums := make(EnumsMap)
 	if err := enums.load(dbConfig); err != nil {
 		return nil, err
@@ -18,7 +16,7 @@ func loadEnums(dbConfig *llsr.DatabaseConfig) (EnumsMap, error) {
 	return enums, nil
 }
 
-func (e EnumsMap) load(dbConfig *llsr.DatabaseConfig) error {
+func (e EnumsMap) load(dbConfig *DatabaseConfig) error {
 	db, err := sql.Open("postgres", dbConfig.ToConnectionString())
 	if err != nil {
 		return err

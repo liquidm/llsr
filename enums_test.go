@@ -1,9 +1,7 @@
-package service
+package llsr
 
 import (
 	"database/sql"
-	_ "github.com/lib/pq"
-	"github.com/liquidm/llsr"
 	"testing"
 )
 
@@ -33,7 +31,7 @@ func withEnumOid(t *testing.T, cb testEnumOidCallback) {
 
 func TestEnumDiscovery(t *testing.T) {
 	withEnumOid(t, func(t *testing.T, oid int) {
-		dbConfig := llsr.NewDatabaseConfig(dbName())
+		dbConfig := NewDatabaseConfig(dbName())
 		dbConfig.User = dbUser()
 
 		enums, err := loadEnums(dbConfig)

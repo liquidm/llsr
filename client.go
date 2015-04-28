@@ -1,25 +1,26 @@
-package service
+package llsr
 
-import (
-	"github.com/liquidm/llsr"
-)
-
-//Converter is used to conver raw llsr.RowMessage structs into app specific data.
+//Converter is used to conver raw RowMessage structs into app specific data.
 type Converter interface {
-	//Converts llsr.RowMessage into app specific data.
-	Convert(*llsr.RowMessage, EnumsMap) interface{}
+	//Converts RowMessage into app specific data.
+	Convert(*RowMessage, EnumsMap) interface{}
 }
 
-type Client struct {
+type Client interface {
+	Updates() <-chan interface{}
+	Events() <-chan *Event
+}
+
+type client struct {
 	updates chan interface{}
 	events  chan *Event
 
-	dbConfig      *llsr.DatabaseConfig
+	dbConfig      *DatabaseConfig
 	slot          string
-	startPosition llsr.LogPos
+	startPosition LogPos
 	converter     Converter
 
-	stream *llsr.Stream
+	stream *Stream
 
 	stopped    bool
 	closeChan  chan struct{}
@@ -29,13 +30,13 @@ type Client struct {
 }
 
 //Creates new Client struct
-func NewClient(dbConfig *llsr.DatabaseConfig, converter Converter, slot string, startPosition llsr.LogPos) (*Client, error) {
+func NewClient(dbConfig *DatabaseConfig, converter Converter, slot string, startPosition LogPos) (Client, error) {
 	enums, err := loadEnums(dbConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	client := &Client{
+	client := &client{
 		dbConfig:      dbConfig,
 		converter:     converter,
 		slot:          slot,
@@ -50,24 +51,24 @@ func NewClient(dbConfig *llsr.DatabaseConfig, converter Converter, slot string, 
 }
 
 //Updates produces objects converted by Converter interface.
-func (c *Client) Updates() <-chan interface{} {
+func (c *client) Updates() <-chan interface{} {
 	return c.updates
 }
 
 //Events produces control events about underlying Stream object.
-func (c *Client) Events() <-chan *Event {
+func (c *client) Events() <-chan *Event {
 	return c.events
 }
 
 //Starts client. It does not block.
-func (c *Client) Start() error {
+func (c *client) Start() error {
 	if c.stream != nil {
-		return llsr.ErrStreamAlreadyRunning
+		return ErrStreamAlreadyRunning
 	}
 
 	c.stopped = false
 
-	c.stream = llsr.NewStream(c.dbConfig, c.slot, c.startPosition)
+	c.stream = NewStream(c.dbConfig, c.slot, c.startPosition)
 	if err := c.stream.Start(); err != nil {
 		return err
 	}
@@ -80,25 +81,25 @@ func (c *Client) Start() error {
 }
 
 //Stops client. It blocks untill pg_recvlogical closes.
-func (c *Client) Stop() {
+func (c *client) Stop() {
 	c.stopped = true
 	close(c.closeChan)
 	<-c.closedChan
 }
 
-func (c *Client) recvData() {
+func (c *client) recvData() {
 	for {
 		select {
 		case data := <-c.stream.Data():
 			c.updates <- c.converter.Convert(data, c.enums)
-			c.startPosition = llsr.LogPos(data.GetLogPosition())
+			c.startPosition = LogPos(data.GetLogPosition())
 		case <-c.closeChan:
 			return
 		}
 	}
 }
 
-func (c *Client) recvStdErr() {
+func (c *client) recvStdErr() {
 	for {
 		select {
 		case stdErrStr := <-c.stream.ErrOut():
@@ -109,7 +110,7 @@ func (c *Client) recvStdErr() {
 	}
 }
 
-func (c *Client) recvControl() {
+func (c *client) recvControl() {
 	for {
 		select {
 		case <-c.closeChan:
@@ -130,7 +131,7 @@ func (c *Client) recvControl() {
 	}
 }
 
-func (c *Client) reconnect() {
+func (c *client) reconnect() {
 	go func() {
 		c.events <- &Event{Type: EventReconnect}
 	}()
