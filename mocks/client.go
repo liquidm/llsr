@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"github.com/liquidm/llsr"
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 type Client struct {
@@ -35,7 +36,7 @@ func (c *Client) Events() <-chan *llsr.Event {
 	return c.events
 }
 
-func (c *Client) ExpectYieldMessage(msg *llsr.RowMessage) {
+func (c *Client) ExpectYieldMessage(msg *decoderbufs.RowMessage) {
 	c.expectations <- msg
 }
 
@@ -66,7 +67,7 @@ func (c *Client) Close() {
 func (c *Client) handleExpectations() {
 	for ex := range c.expectations {
 		switch t := ex.(type) {
-		case *llsr.RowMessage:
+		case *decoderbufs.RowMessage:
 			c.updates <- c.converter.Convert(t, nil)
 		case *llsr.Event:
 			c.events <- t

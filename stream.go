@@ -5,10 +5,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 var (
@@ -28,7 +30,7 @@ type Stream struct {
 	errFifo  *Fifo
 	dataFifo *Fifo
 
-	msgChan chan *RowMessage
+	msgChan chan *decoderbufs.RowMessage
 
 	finished     chan error
 	runtimeError error
@@ -57,7 +59,7 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 		finished: make(chan error),
 		errFifo:  NewFifo(),
 		dataFifo: NewFifo(),
-		msgChan:  make(chan *RowMessage),
+		msgChan:  make(chan *decoderbufs.RowMessage),
 	}
 	go stream.convertData()
 	return stream
@@ -111,7 +113,7 @@ func (s *Stream) Finished() <-chan error {
 }
 
 //Data channel produces RowMessage objects.
-func (s *Stream) Data() <-chan *RowMessage {
+func (s *Stream) Data() <-chan *decoderbufs.RowMessage {
 	return s.msgChan
 }
 
@@ -165,7 +167,7 @@ func (s *Stream) recvData() {
 func (s *Stream) convertData() {
 	for {
 		data := (<-s.dataFifo.Output()).([]byte)
-		decodedData := &RowMessage{}
+		decodedData := &decoderbufs.RowMessage{}
 
 		err := proto.Unmarshal(data, decodedData)
 		if err != nil {

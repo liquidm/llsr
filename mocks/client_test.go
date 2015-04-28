@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/liquidm/llsr"
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 type testReporterMock struct {
@@ -33,7 +34,7 @@ func TestClientHandlesUpdateExpectations(t *testing.T) {
 		client.Close()
 	}()
 
-	client.ExpectYieldMessage(&llsr.RowMessage{Table: proto.String("users"), Op: llsr.Op_INSERT.Enum()})
+	client.ExpectYieldMessage(&decoderbufs.RowMessage{Table: proto.String("users"), Op: decoderbufs.Op_INSERT.Enum()})
 	client.ExpectYieldEvent(&llsr.Event{Type: llsr.EventReconnect})
 
 	msg := <-client.Updates()
@@ -53,7 +54,7 @@ func TestClientMeetsNotAllMessagesConsumedError(t *testing.T) {
 	trm := newTestReporterMock()
 	client := NewClient(trm, &DummyConverter{})
 
-	client.ExpectYieldMessage(&llsr.RowMessage{Table: proto.String("users"), Op: llsr.Op_INSERT.Enum()})
+	client.ExpectYieldMessage(&decoderbufs.RowMessage{Table: proto.String("users"), Op: decoderbufs.Op_INSERT.Enum()})
 
 	client.Close()
 

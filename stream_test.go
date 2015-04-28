@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 type testStreamCallback func(*testing.T, *sql.DB, *Stream)
@@ -101,8 +103,8 @@ func TestStreamMessages(t *testing.T) {
 
 		op := msg2.GetOp()
 
-		if op != Op_UPDATE {
-			t.Fatalf("Expected UPDATE change got %s", Op_name[int32(op)])
+		if op != decoderbufs.Op_UPDATE {
+			t.Fatalf("Expected UPDATE change got %s", decoderbufs.Op_name[int32(op)])
 		}
 
 	})

@@ -4,19 +4,20 @@ import (
 	"bytes"
 
 	"github.com/liquidm/llsr"
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 type DummyConverter struct{}
 
-func (*DummyConverter) Convert(change *llsr.RowMessage, enums llsr.EnumsMap) interface{} {
+func (*DummyConverter) Convert(change *decoderbufs.RowMessage, enums llsr.EnumsMap) interface{} {
 	var buf bytes.Buffer
 
 	switch change.GetOp() {
-	case llsr.Op_INSERT:
+	case decoderbufs.Op_INSERT:
 		buf.WriteString("INSERT ")
-	case llsr.Op_UPDATE:
+	case decoderbufs.Op_UPDATE:
 		buf.WriteString("UPDATE ")
-	case llsr.Op_DELETE:
+	case decoderbufs.Op_DELETE:
 		buf.WriteString("DELETE ")
 	}
 

@@ -1,9 +1,13 @@
 package llsr
 
+import (
+	"github.com/liquidm/llsr/decoderbufs"
+)
+
 //Converter is used to conver raw RowMessage structs into app specific data.
 type Converter interface {
 	//Converts RowMessage into app specific data.
-	Convert(*RowMessage, EnumsMap) interface{}
+	Convert(*decoderbufs.RowMessage, EnumsMap) interface{}
 }
 
 type Client interface {

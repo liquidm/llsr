@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"testing"
 	"time"
+
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 type testConnCallback func(*testing.T, *sql.DB)
@@ -12,15 +14,15 @@ type testClientCallback func(*testing.T, Client, *sql.DB)
 
 type DummyConverter struct{}
 
-func (*DummyConverter) Convert(change *RowMessage, enums EnumsMap) interface{} {
+func (*DummyConverter) Convert(change *decoderbufs.RowMessage, enums EnumsMap) interface{} {
 	var buf bytes.Buffer
 
 	switch change.GetOp() {
-	case Op_INSERT:
+	case decoderbufs.Op_INSERT:
 		buf.WriteString("INSERT ")
-	case Op_UPDATE:
+	case decoderbufs.Op_UPDATE:
 		buf.WriteString("UPDATE ")
-	case Op_DELETE:
+	case decoderbufs.Op_DELETE:
 		buf.WriteString("DELETE ")
 	}
 
