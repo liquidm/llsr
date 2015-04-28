@@ -55,6 +55,7 @@ func expectClientEvent(t *testing.T, c Client, eventType EventType) {
 
 func expectClientUpdate(t *testing.T, c Client, updateMsg string) {
 	updateFound := make(chan bool)
+
 	go func() {
 		for {
 			i := <-c.Updates()
@@ -65,6 +66,7 @@ func expectClientUpdate(t *testing.T, c Client, updateMsg string) {
 			}
 		}
 	}()
+
 	select {
 	case <-updateFound:
 	case <-time.Tick(5 * time.Second):
@@ -103,11 +105,10 @@ func withTestClient(t *testing.T, cb testClientCallback) {
 
 		client := c.(*client)
 
-		err = client.Start()
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer client.Stop()
+		defer client.Close()
 
 		time.Sleep(1e9)
 
@@ -118,7 +119,7 @@ func withTestClient(t *testing.T, cb testClientCallback) {
 func TestClientEvents(t *testing.T) {
 	withTestClient(t, func(t *testing.T, c Client, db *sql.DB) {
 		client := c.(*client)
-		client.stream.Stop()
+		client.stream.Close()
 		expectClientEvent(t, client, EventReconnect)
 	})
 }

@@ -95,16 +95,17 @@ func (s *Stream) Start() error {
 	go s.recvData()
 	go s.convertData()
 	go s.wait()
+
 	return nil
 }
 
 //Closes connection with LLSR. It does not block. You should wait on Finished channel to ensure stream is closed.
-func (s *Stream) Stop() error {
+func (s *Stream) Close() error {
 	return s.cmd.Process.Signal(os.Interrupt)
 }
 
 //Finished channel produces error message when underlying pg_recvlogical exits with error.
-//It produces nil when pg_recvlogical exits with 0 (e.g when Stop() was called)
+//It produces nil when pg_recvlogical exits with 0 (e.g when Close() was called)
 func (s *Stream) Finished() <-chan error {
 	return s.finished
 }
@@ -189,7 +190,7 @@ func (s *Stream) wait() {
 
 func (s *Stream) stopWith(err error) {
 	s.runtimeError = err
-	stopErr := s.Stop()
+	stopErr := s.Close()
 	if stopErr != nil {
 		select {
 		case s.finished <- err:

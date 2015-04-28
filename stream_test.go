@@ -47,7 +47,7 @@ func TestStreamOpeningAndClosing(t *testing.T) {
 
 		time.Sleep(1e9)
 
-		stream.Stop()
+		stream.Close()
 		err = <-stream.Finished()
 		if err != nil {
 			t.Fatal(err)
@@ -67,7 +67,7 @@ func withTestStream(t *testing.T, cb testStreamCallback) {
 			t.Fatal(err)
 		}
 		defer func() {
-			stream.Stop()
+			stream.Close()
 			err = <-stream.Finished()
 			if err != nil {
 				t.Fatal(err)

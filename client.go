@@ -9,6 +9,7 @@ type Converter interface {
 type Client interface {
 	Updates() <-chan interface{}
 	Events() <-chan *Event
+	Close()
 }
 
 type client struct {
@@ -47,7 +48,8 @@ func NewClient(dbConfig *DatabaseConfig, converter Converter, slot string, start
 		closedChan:    make(chan bool),
 		enums:         enums,
 	}
-	return client, nil
+
+	return client, client.start()
 }
 
 //Updates produces objects converted by Converter interface.
@@ -61,7 +63,7 @@ func (c *client) Events() <-chan *Event {
 }
 
 //Starts client. It does not block.
-func (c *client) Start() error {
+func (c *client) start() error {
 	if c.stream != nil {
 		return ErrStreamAlreadyRunning
 	}
@@ -81,7 +83,7 @@ func (c *client) Start() error {
 }
 
 //Stops client. It blocks untill pg_recvlogical closes.
-func (c *client) Stop() {
+func (c *client) Close() {
 	c.stopped = true
 	close(c.closeChan)
 	<-c.closedChan
@@ -114,7 +116,7 @@ func (c *client) recvControl() {
 	for {
 		select {
 		case <-c.closeChan:
-			c.stream.Stop()
+			c.stream.Close()
 		case err := <-c.stream.Finished():
 			if err != nil {
 				go func() {
@@ -136,5 +138,5 @@ func (c *client) reconnect() {
 		c.events <- &Event{Type: EventReconnect}
 	}()
 	c.stream = nil
-	c.Start()
+	c.start()
 }
