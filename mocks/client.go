@@ -1,70 +1,63 @@
 package mocks
 
 import (
-	"bytes"
-
 	"github.com/liquidm/llsr"
 )
-
-type ErrorReporter interface {
-	Errorf(string, ...interface{})
-}
-
-type DummyConverter struct{}
-
-func (*DummyConverter) Convert(change *llsr.RowMessage, enums llsr.EnumsMap) interface{} {
-	var buf bytes.Buffer
-
-	switch change.GetOp() {
-	case llsr.Op_INSERT:
-		buf.WriteString("INSERT ")
-	case llsr.Op_UPDATE:
-		buf.WriteString("UPDATE ")
-	case llsr.Op_DELETE:
-		buf.WriteString("DELETE ")
-	}
-
-	buf.WriteString(change.GetTable())
-
-	return buf.String()
-}
 
 type Client struct {
 	t            ErrorReporter
 	converter    llsr.Converter
-	expectations chan *llsr.RowMessage
+	expectations chan interface{}
+	closeChan    chan int
 	updates      chan interface{}
+	events       chan *llsr.Event
 }
 
 func NewClient(t ErrorReporter, converter llsr.Converter) *Client {
 	c := &Client{
 		t:            t,
 		converter:    converter,
-		expectations: make(chan *llsr.RowMessage, 1000),
+		expectations: make(chan interface{}, 1000),
 		updates:      make(chan interface{}, 1000),
+		events:       make(chan *llsr.Event),
+		closeChan:    make(chan int),
 	}
 
+	go c.handleExpectations()
 	return c
 }
 
 func (c *Client) Updates() <-chan interface{} {
-	go c.handleExpectations()
 	return c.updates
 }
 
 func (c *Client) Events() <-chan *llsr.Event {
-	return nil
+	return c.events
 }
 
-func (c *Client) ExpectUpdate() *Client {
-	return c
-}
-
-func (c *Client) YieldMessage(msg *llsr.RowMessage) {
+func (c *Client) ExpectYieldMessage(msg *llsr.RowMessage) {
 	c.expectations <- msg
 }
 
+func (c *Client) ExpectYieldEvent(event *llsr.Event) {
+	c.expectations <- event
+}
+
+func (c *Client) ExpectReconnectEvent() {
+	c.expectations <- &llsr.Event{Type: llsr.EventReconnect}
+}
+
+func (c *Client) ExpectBackendStdErrEvent() {
+	c.expectations <- &llsr.Event{Type: llsr.EventBackendStdErr}
+}
+
+func (c *Client) ExpectBackendInvalidExitStatusEvent() {
+	c.expectations <- &llsr.Event{Type: llsr.EventBackendInvalidExitStatus}
+}
+
 func (c *Client) Close() {
+	close(c.expectations)
+	<-c.closeChan
 	if len(c.updates) > 0 {
 		c.t.Errorf("Not all messages were consumed")
 	}
@@ -72,6 +65,13 @@ func (c *Client) Close() {
 
 func (c *Client) handleExpectations() {
 	for ex := range c.expectations {
-		c.updates <- c.converter.Convert(ex, nil)
+		switch t := ex.(type) {
+		case *llsr.RowMessage:
+			c.updates <- c.converter.Convert(t, nil)
+		case *llsr.Event:
+			c.events <- t
+		}
 	}
+
+	c.closeChan <- 1
 }
