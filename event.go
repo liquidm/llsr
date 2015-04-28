@@ -1,4 +1,4 @@
-package service
+package llsr
 
 type EventType int
 

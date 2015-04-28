@@ -5,15 +5,17 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 var (
 	ErrStreamAlreadyRunning     = errors.New("llsr: Replication stream is already opened")
-	ErrUnableToReadWholeMessage = errors.New("Unable to read whole message")
+	ErrUnableToReadWholeMessage = errors.New("llsr: Unable to read whole message")
 )
 
 //Stream represents pg_recvlogical process.
@@ -28,7 +30,7 @@ type Stream struct {
 	errFifo  *Fifo
 	dataFifo *Fifo
 
-	msgChan chan *RowMessage
+	msgChan chan *decoderbufs.RowMessage
 
 	finished     chan error
 	runtimeError error
@@ -57,7 +59,7 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 		finished: make(chan error),
 		errFifo:  NewFifo(),
 		dataFifo: NewFifo(),
-		msgChan:  make(chan *RowMessage),
+		msgChan:  make(chan *decoderbufs.RowMessage),
 	}
 	go stream.convertData()
 	return stream
@@ -95,22 +97,23 @@ func (s *Stream) Start() error {
 	go s.recvData()
 	go s.convertData()
 	go s.wait()
+
 	return nil
 }
 
 //Closes connection with LLSR. It does not block. You should wait on Finished channel to ensure stream is closed.
-func (s *Stream) Stop() error {
+func (s *Stream) Close() error {
 	return s.cmd.Process.Signal(os.Interrupt)
 }
 
 //Finished channel produces error message when underlying pg_recvlogical exits with error.
-//It produces nil when pg_recvlogical exits with 0 (e.g when Stop() was called)
+//It produces nil when pg_recvlogical exits with 0 (e.g when Close() was called)
 func (s *Stream) Finished() <-chan error {
 	return s.finished
 }
 
 //Data channel produces RowMessage objects.
-func (s *Stream) Data() <-chan *RowMessage {
+func (s *Stream) Data() <-chan *decoderbufs.RowMessage {
 	return s.msgChan
 }
 
@@ -164,7 +167,7 @@ func (s *Stream) recvData() {
 func (s *Stream) convertData() {
 	for {
 		data := (<-s.dataFifo.Output()).([]byte)
-		decodedData := &RowMessage{}
+		decodedData := &decoderbufs.RowMessage{}
 
 		err := proto.Unmarshal(data, decodedData)
 		if err != nil {
@@ -189,7 +192,7 @@ func (s *Stream) wait() {
 
 func (s *Stream) stopWith(err error) {
 	s.runtimeError = err
-	stopErr := s.Stop()
+	stopErr := s.Close()
 	if stopErr != nil {
 		select {
 		case s.finished <- err:

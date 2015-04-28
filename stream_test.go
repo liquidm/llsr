@@ -6,9 +6,10 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
-type testConnCallback func(*testing.T, *sql.DB)
 type testStreamCallback func(*testing.T, *sql.DB, *Stream)
 
 var user string
@@ -34,28 +35,6 @@ func dbName() string {
 	return dbname
 }
 
-func withTestConnection(t *testing.T, cb testConnCallback) {
-	db, err := sql.Open("postgres", "sslmode=disable user="+dbUser()+" dbname="+dbName())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	_, err = db.Exec("CREATE TABLE llsr_test_table (id int primary key, txt text NOT NULL);")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Exec("DROP TABLE llsr_test_table")
-
-	_, err = db.Exec("SELECT * FROM pg_create_logical_replication_slot('llsr_test_slot', 'decoderbufs')")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Exec("SELECT * FROM pg_drop_replication_slot('llsr_test_slot')")
-
-	cb(t, db)
-}
-
 func TestStreamOpeningAndClosing(t *testing.T) {
 	withTestConnection(t, func(t *testing.T, db *sql.DB) {
 		config := NewDatabaseConfig(dbName())
@@ -68,9 +47,9 @@ func TestStreamOpeningAndClosing(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		time.Sleep(1000000000)
+		time.Sleep(1e9)
 
-		stream.Stop()
+		stream.Close()
 		err = <-stream.Finished()
 		if err != nil {
 			t.Fatal(err)
@@ -90,7 +69,7 @@ func withTestStream(t *testing.T, cb testStreamCallback) {
 			t.Fatal(err)
 		}
 		defer func() {
-			stream.Stop()
+			stream.Close()
 			err = <-stream.Finished()
 			if err != nil {
 				t.Fatal(err)
@@ -124,8 +103,8 @@ func TestStreamMessages(t *testing.T) {
 
 		op := msg2.GetOp()
 
-		if op != Op_UPDATE {
-			t.Fatalf("Expected UPDATE change got %s", Op_name[int32(op)])
+		if op != decoderbufs.Op_UPDATE {
+			t.Fatalf("Expected UPDATE change got %s", decoderbufs.Op_name[int32(op)])
 		}
 
 	})

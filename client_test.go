@@ -1,28 +1,28 @@
-package service
+package llsr
 
 import (
 	"bytes"
 	"database/sql"
-	_ "github.com/lib/pq"
-	"github.com/liquidm/llsr"
 	"testing"
 	"time"
+
+	"github.com/liquidm/llsr/decoderbufs"
 )
 
 type testConnCallback func(*testing.T, *sql.DB)
-type testClientCallback func(*testing.T, *Client, *sql.DB)
+type testClientCallback func(*testing.T, Client, *sql.DB)
 
 type DummyConverter struct{}
 
-func (*DummyConverter) Convert(change *llsr.RowMessage, enums EnumsMap) interface{} {
+func (*DummyConverter) Convert(change *decoderbufs.RowMessage, valuesMap ValuesMap) interface{} {
 	var buf bytes.Buffer
 
 	switch change.GetOp() {
-	case llsr.Op_INSERT:
+	case decoderbufs.Op_INSERT:
 		buf.WriteString("INSERT ")
-	case llsr.Op_UPDATE:
+	case decoderbufs.Op_UPDATE:
 		buf.WriteString("UPDATE ")
-	case llsr.Op_DELETE:
+	case decoderbufs.Op_DELETE:
 		buf.WriteString("DELETE ")
 	}
 
@@ -31,13 +31,13 @@ func (*DummyConverter) Convert(change *llsr.RowMessage, enums EnumsMap) interfac
 	return buf.String()
 }
 
-func testConfig() *llsr.DatabaseConfig {
-	config := llsr.NewDatabaseConfig(dbName())
+func testConfig() *DatabaseConfig {
+	config := NewDatabaseConfig(dbName())
 	config.User = dbUser()
 	return config
 }
 
-func expectClientEvent(t *testing.T, c *Client, eventType EventType) {
+func expectClientEvent(t *testing.T, c Client, eventType EventType) {
 	eventFound := make(chan bool)
 	go func() {
 		for {
@@ -55,8 +55,9 @@ func expectClientEvent(t *testing.T, c *Client, eventType EventType) {
 	}
 }
 
-func expectClientUpdate(t *testing.T, c *Client, updateMsg string) {
+func expectClientUpdate(t *testing.T, c Client, updateMsg string) {
 	updateFound := make(chan bool)
+
 	go func() {
 		for {
 			i := <-c.Updates()
@@ -67,6 +68,7 @@ func expectClientUpdate(t *testing.T, c *Client, updateMsg string) {
 			}
 		}
 	}()
+
 	select {
 	case <-updateFound:
 	case <-time.Tick(5 * time.Second):
@@ -98,32 +100,34 @@ func withTestConnection(t *testing.T, cb testConnCallback) {
 
 func withTestClient(t *testing.T, cb testClientCallback) {
 	withTestConnection(t, func(t *testing.T, db *sql.DB) {
-		client, err := NewClient(testConfig(), &DummyConverter{}, "llsr_test_slot", 0)
+		c, err := NewClient(testConfig(), &DummyConverter{}, "llsr_test_slot", 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		err = client.Start()
+		client := c.(*client)
+
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer client.Stop()
+		defer client.Close()
 
-		time.Sleep(1000000000)
+		time.Sleep(1e9)
 
 		cb(t, client, db)
 	})
 }
 
 func TestClientEvents(t *testing.T) {
-	withTestClient(t, func(t *testing.T, client *Client, db *sql.DB) {
-		client.stream.Stop()
+	withTestClient(t, func(t *testing.T, c Client, db *sql.DB) {
+		client := c.(*client)
+		client.stream.Close()
 		expectClientEvent(t, client, EventReconnect)
 	})
 }
 
 func TestClientUpdates(t *testing.T) {
-	withTestClient(t, func(t *testing.T, client *Client, db *sql.DB) {
+	withTestClient(t, func(t *testing.T, client Client, db *sql.DB) {
 		_, err := db.Exec("INSERT INTO llsr_test_table (id, txt) VALUES(1, 'foo')")
 		if err != nil {
 			t.Fatal(err)
