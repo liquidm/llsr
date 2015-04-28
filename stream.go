@@ -13,7 +13,7 @@ import (
 
 var (
 	ErrStreamAlreadyRunning     = errors.New("llsr: Replication stream is already opened")
-	ErrUnableToReadWholeMessage = errors.New("Unable to read whole message")
+	ErrUnableToReadWholeMessage = errors.New("llsr: Unable to read whole message")
 )
 
 //Stream represents pg_recvlogical process.
