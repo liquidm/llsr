@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -76,18 +77,22 @@ func TestExpectReconnectEvent(t *testing.T) {
 
 func TestExpectEventBackendStdErr(t *testing.T) {
 	client := NewClient(t, &DummyConverter{})
-	client.ExpectBackendStdErrEvent()
+	client.ExpectBackendStdErrEvent("stderr output")
 
 	event := <-client.Events()
 
 	if event.Type != llsr.EventBackendStdErr {
 		t.Error("Expected to receive llsr.EventBackendStdErr event")
 	}
+
+	if event.Value.(string) != "stderr output" {
+		t.Errorf("Expected event to contain '%s' value, got: %v", "stderr output", event.Value)
+	}
 }
 
 func TestExpect(t *testing.T) {
 	client := NewClient(t, &DummyConverter{})
-	client.ExpectBackendInvalidExitStatusEvent()
+	client.ExpectBackendInvalidExitStatusEvent(errors.New(""))
 
 	event := <-client.Events()
 

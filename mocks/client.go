@@ -25,7 +25,7 @@ func NewClient(t ErrorReporter, converter llsr.Converter) *Client {
 		converter:    converter,
 		expectations: make(chan interface{}, 1000),
 		updates:      make(chan interface{}, 1000),
-		events:       make(chan *llsr.Event),
+		events:       make(chan *llsr.Event, 1000),
 		closeChan:    make(chan int),
 	}
 
@@ -61,13 +61,13 @@ func (c *Client) ExpectReconnectEvent() {
 }
 
 // ExpectYieldMessage simulates Std error event
-func (c *Client) ExpectBackendStdErrEvent() {
-	c.expectations <- &llsr.Event{Type: llsr.EventBackendStdErr}
+func (c *Client) ExpectBackendStdErrEvent(content string) {
+	c.expectations <- &llsr.Event{Type: llsr.EventBackendStdErr, Value: content}
 }
 
 // ExpectYieldMessage simulates Backend error event
-func (c *Client) ExpectBackendInvalidExitStatusEvent() {
-	c.expectations <- &llsr.Event{Type: llsr.EventBackendInvalidExitStatus}
+func (c *Client) ExpectBackendInvalidExitStatusEvent(err error) {
+	c.expectations <- &llsr.Event{Type: llsr.EventBackendInvalidExitStatus, Value: err}
 }
 
 // Closes implements Close method from llsr.Client interface.
