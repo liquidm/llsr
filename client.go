@@ -116,7 +116,8 @@ func (c *client) recvStdErr() {
 	for {
 		select {
 		case stdErrStr := <-c.stream.ErrOut():
-			c.events <- &Event{Type: EventBackendStdErr, Value: stdErrStr}
+			value := stdErrStr.(string)
+			c.events <- &Event{Type: EventBackendStdErr, Value: value[:len(value)-1]}
 		case <-c.closeChan:
 			return
 		}
