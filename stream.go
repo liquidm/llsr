@@ -52,7 +52,7 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 		cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSWORD=%s", dbConfig.Password))
 	}
 	if startPos > 0 {
-		cmd.Args = append(cmd.Args, "-I", startPos.ToString())
+		cmd.Args = append(cmd.Args, "-I", startPos.String())
 	}
 	stream := &Stream{
 		cmd:      cmd,
