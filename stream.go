@@ -151,15 +151,13 @@ func (s *Stream) recvData() {
 			return
 		}
 		data := make([]byte, length+1)
-		n, err := s.stdOut.Read(data)
+
+		_, err = io.ReadFull(s.stdOut, data)
 		if err != nil {
 			s.stopWith(err)
 			return
 		}
-		if n != int(length+1) {
-			s.stopWith(ErrUnableToReadWholeMessage)
-			return
-		}
+
 		s.dataFifo.Input() <- data[:length]
 	}
 }
