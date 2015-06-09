@@ -8,7 +8,7 @@ import (
 type LogPos uint64
 
 //Converts position to its textual representation (e.g. 17/A4C41EC0)
-func (v LogPos) ToString() string {
+func (v LogPos) String() string {
 	high := uint32(v >> 32)
 	low := uint32(v)
 	return fmt.Sprintf("%X/%X", high, low)
