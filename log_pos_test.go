@@ -10,9 +10,9 @@ func TestXLogPosConversion(t *testing.T) {
 	conversions["A1/243C4C60"] = LogPos(692097666144)
 
 	for k, v := range conversions {
-		rk := v.ToString()
+		rk := v.String()
 		if rk != k {
-			t.Fatalf("expected LogPos(%d).ToString() to equal %s; got %v", v, k, rk)
+			t.Fatalf("expected LogPos(%d).String() to equal %s; got %v", v, k, rk)
 		}
 
 		kr := StrToLogPos(k)
