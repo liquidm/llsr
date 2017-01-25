@@ -69,20 +69,25 @@ func (v ValuesMap) load(dbConfig *DatabaseConfig) error {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT enumtypid FROM pg_enum;")
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var oid int
-
-		if err := rows.Scan(&oid); err != nil {
+	oidQueries := []string{"SELECT enumtypid FROM pg_enum;", "SELECT DISTINCT typarray FROM pg_type WHERE typarray > 0;"}
+	for _, query := range oidQueries {
+		rows, err := db.Query(query)
+		if err != nil {
 			return err
 		}
 
-		v[oid] = true
+		for rows.Next() {
+			var oid int
+
+			if err := rows.Scan(&oid); err != nil {
+				return err
+			}
+
+			v[oid] = true
+		}
+
+		rows.Close()
 	}
+
 	return nil
 }
