@@ -27,8 +27,8 @@ type Stream struct {
 	stdOut io.ReadCloser
 	stdErr io.ReadCloser
 
-	errFifo  *Fifo
-	dataFifo *Fifo
+	errEvents  chan interface{}
+	dataEvents chan interface{}
 
 	msgChan chan *decoderbufs.RowMessage
 
@@ -55,11 +55,11 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 		cmd.Args = append(cmd.Args, "-I", startPos.String())
 	}
 	stream := &Stream{
-		cmd:      cmd,
-		finished: make(chan error),
-		errFifo:  NewFifo(),
-		dataFifo: NewFifo(),
-		msgChan:  make(chan *decoderbufs.RowMessage),
+		cmd:        cmd,
+		finished:   make(chan error),
+		errEvents:  make(chan interface{}),
+		dataEvents: make(chan interface{}),
+		msgChan:    make(chan *decoderbufs.RowMessage),
 	}
 	go stream.convertData()
 	return stream
@@ -82,9 +82,6 @@ func (s *Stream) Start() error {
 	if err != nil {
 		return err
 	}
-
-	s.errFifo.Open()
-	s.dataFifo.Open()
 
 	err = s.cmd.Start()
 	if err != nil {
@@ -119,7 +116,7 @@ func (s *Stream) Data() <-chan *decoderbufs.RowMessage {
 
 //ErrOut channel produces STDERR messages of underlying pg_recvlogical process.
 func (s *Stream) ErrOut() <-chan interface{} {
-	return s.errFifo.Output()
+	return s.errEvents
 }
 
 func (s *Stream) recvErrors() {
@@ -127,7 +124,7 @@ func (s *Stream) recvErrors() {
 	for {
 		str, err := reader.ReadString('\n')
 		if len(str) > 0 {
-			s.errFifo.Input() <- str
+			s.errEvents <- str
 		}
 		if err == io.EOF {
 			return
@@ -158,13 +155,13 @@ func (s *Stream) recvData() {
 			return
 		}
 
-		s.dataFifo.Input() <- data[:length]
+		s.dataEvents <- data[:length]
 	}
 }
 
 func (s *Stream) convertData() {
 	for {
-		data := (<-s.dataFifo.Output()).([]byte)
+		data := (<-s.dataEvents).([]byte)
 		decodedData := &decoderbufs.RowMessage{}
 
 		err := proto.Unmarshal(data, decodedData)
@@ -179,8 +176,6 @@ func (s *Stream) convertData() {
 
 func (s *Stream) wait() {
 	err := s.cmd.Wait()
-	s.errFifo.Close()
-	s.dataFifo.Close()
 	if err == nil {
 		err = s.runtimeError
 		s.runtimeError = nil
