@@ -4,6 +4,11 @@ Package llsr is a pg_recvlogical wraper for Postgres' Logical Log Streaming Repl
 package llsr
 
 import (
+	"bytes"
+	"database/sql"
+	"strconv"
+
+	"github.com/lib/pq/oid"
 	"github.com/liquidm/llsr/decoderbufs"
 )
 
@@ -27,6 +32,8 @@ type client struct {
 	updates chan interface{}
 	events  chan *Event
 
+	db *sql.DB
+
 	dbConfig      *DatabaseConfig
 	slot          string
 	startPosition LogPos
@@ -48,8 +55,14 @@ func NewClient(dbConfig *DatabaseConfig, converter Converter, slot string, start
 		return nil, err
 	}
 
+	db, err := sql.Open("postgres", dbConfig.ToConnectionString())
+	if err != nil {
+		return nil, err
+	}
+
 	client := &client{
 		dbConfig:      dbConfig,
+		db:            db,
 		converter:     converter,
 		slot:          slot,
 		startPosition: startPosition,
@@ -98,12 +111,15 @@ func (c *client) Close() {
 	c.stopped = true
 	close(c.closeChan)
 	<-c.closedChan
+	c.db.Close()
 }
 
 func (c *client) recvData() {
 	for {
 		select {
 		case data := <-c.stream.Data():
+			c.setUnchangedValues(data.GetTable(), data.GetNewTuple())
+			c.setUnchangedValues(data.GetTable(), data.GetOldTuple())
 			c.updates <- c.converter.Convert(data, c.valuesMap)
 			c.startPosition = LogPos(data.GetLogPosition())
 		case <-c.closeChan:
@@ -151,4 +167,54 @@ func (c *client) reconnect() {
 	}()
 	c.stream = nil
 	c.start()
+}
+
+func (c *client) setUnchangedValues(tableName string, msgs []*decoderbufs.DatumMessage) {
+	var id int64
+	var unchangedColumns map[string]int
+	for i, msg := range msgs {
+		if msg.GetColumnName() == "id" {
+			id = int64(msg.GetDatumInt32())
+			if id == 0 {
+				id = int64(msg.GetDatumInt64())
+			}
+		}
+
+		if msg.GetUnchangedNoValue() {
+			if unchangedColumns == nil {
+				unchangedColumns = make(map[string]int)
+			}
+			unchangedColumns[msg.GetColumnName()] = i
+		}
+	}
+
+	if len(unchangedColumns) > 0 && id != 0 {
+		var query bytes.Buffer
+		columns := make([]interface{}, 0, len(unchangedColumns))
+		first := true
+
+		query.WriteString("SELECT ")
+		for columnName, i := range unchangedColumns {
+			var value string
+			msgs[i].DatumString = &value
+			textOid := int64(oid.T_text)
+			msgs[i].ColumnType = &textOid
+			columns = append(columns, &value)
+			if !first {
+				query.WriteString(", ")
+			}
+			query.WriteString(columnName)
+			first = false
+		}
+
+		query.WriteString(" FROM ")
+		query.WriteString(tableName)
+		query.WriteString(" WHERE id = ")
+		query.WriteString(strconv.Itoa(int(id)))
+
+		err := c.db.QueryRow(query.String()).Scan(columns...)
+		if err != nil && err != sql.ErrNoRows {
+			panic(err)
+		}
+	}
 }
