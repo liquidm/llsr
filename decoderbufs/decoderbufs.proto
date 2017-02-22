@@ -26,6 +26,8 @@ message DatumMessage {
     optional string datum_string = 8;
     optional bytes datum_bytes = 9;
     optional Point datum_point = 10;
+
+    optional bool unchanged_no_value = 11;
 }
 
 message RowMessage {
