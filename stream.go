@@ -61,7 +61,6 @@ func NewStream(dbConfig *DatabaseConfig, slot string, startPos LogPos) *Stream {
 		dataEvents: make(chan interface{}),
 		msgChan:    make(chan *decoderbufs.RowMessage),
 	}
-	go stream.convertData()
 	return stream
 }
 
