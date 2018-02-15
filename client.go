@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/lib/pq/oid"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 //Converter is used to conver raw RowMessage structs into app specific data.

@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/lib/pq/oid"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 var (

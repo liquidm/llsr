@@ -3,8 +3,8 @@ package mocks
 import (
 	"bytes"
 
-	"github.com/liquidm/llsr"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 type DummyConverter struct{}

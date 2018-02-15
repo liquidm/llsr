@@ -10,7 +10,7 @@ import (
 	"os/exec"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 var (

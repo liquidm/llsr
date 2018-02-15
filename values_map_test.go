@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 type testValueMapOidCallback func(*testing.T, int)

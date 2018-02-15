@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 type testConnCallback func(*testing.T, *sql.DB)

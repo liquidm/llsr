@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/liquidm/llsr"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 type testReporterMock struct {

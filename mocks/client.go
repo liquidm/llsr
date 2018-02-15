@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"github.com/liquidm/llsr"
-	"github.com/liquidm/llsr/decoderbufs"
+	"go.build.ligatus.com/dsp/llsr"
+	"go.build.ligatus.com/dsp/llsr/decoderbufs"
 )
 
 // Client implements llsr's Client interface for testing purposes.
