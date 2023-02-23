@@ -13,8 +13,8 @@ var (
 	ErrUnknownOID = errors.New("Unknown OID")
 )
 
-//ValuesMap is used in Converter interface.
-//It has true set to every oid which is value type in database.
+// ValuesMap is used in Converter interface.
+// It has true set to every oid which is value type in database.
 type ValuesMap map[int]bool
 
 func loadValuesMap(dbConfig *DatabaseConfig) (ValuesMap, error) {
@@ -25,8 +25,8 @@ func loadValuesMap(dbConfig *DatabaseConfig) (ValuesMap, error) {
 	return valuesMap, nil
 }
 
-//Extract value from DatumMessage. Returned value is always a pointer.
-//Returns ErrUnknownOID if value is of unonkown OID. If returned with error, value is []byte or nil.
+// Extract value from DatumMessage. Returned value is always a pointer.
+// Returns ErrUnknownOID if value is of unonkown OID. If returned with error, value is []byte or nil.
 func (v ValuesMap) Extract(m *decoderbufs.DatumMessage) (interface{}, error) {
 	var err error
 	var value interface{}
@@ -69,7 +69,11 @@ func (v ValuesMap) load(dbConfig *DatabaseConfig) error {
 	}
 	defer db.Close()
 
-	oidQueries := []string{"SELECT enumtypid FROM pg_enum;", "SELECT DISTINCT typarray FROM pg_type WHERE typarray > 0;"}
+	oidQueries := []string{
+		"SELECT enumtypid FROM pg_enum;",
+		"SELECT DISTINCT typarray FROM pg_type WHERE typarray > 0;",
+		"SELECT oid FROM pg_type WHERE typname = 'citext'",
+	}
 	for _, query := range oidQueries {
 		rows, err := db.Query(query)
 		if err != nil {
