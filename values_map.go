@@ -41,7 +41,7 @@ func (v ValuesMap) Extract(m *decoderbufs.DatumMessage) (interface{}, error) {
 		value = m.DatumFloat
 	case oid.T_float8, oid.T_numeric:
 		value = m.DatumDouble
-	case oid.T_char, oid.T_varchar, oid.T_bpchar, oid.T_text, oid.T_json, oid.T_xml, oid.T_uuid, oid.T_timestamp, oid.T_timestamptz, oid.T_date:
+	case oid.T_char, oid.T_varchar, oid.T_bpchar, oid.T_text, oid.T_json, oid.T_xml, oid.T_uuid, oid.T_timestamp, oid.T_timestamptz, oid.T_date, oid.T_tstzrange:
 		value = m.DatumString
 	case oid.T_point:
 		value = m.DatumPoint
